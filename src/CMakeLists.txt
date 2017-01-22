@@ -89,6 +89,7 @@ add_executable(rtl_433
 	devices/honeywell.c
 	devices/maverick_et73x.c
 	devices/rftech.c
+	devices/test.c
 
 )
 
