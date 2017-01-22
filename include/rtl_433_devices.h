@@ -76,7 +76,8 @@
 		DECL(maverick_et73x) \
 		DECL(rftech) \
 		DECL(lacrosse_TX141TH_Bv2) \
-		DECL(test)
+		DECL(test) \
+		DECL(acurite_00275rm)
 
 
 typedef struct {

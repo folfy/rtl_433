@@ -19,6 +19,7 @@
 #define ID_WGR800   0x1984
 #define ID_WGR968   0x3d00
 #define ID_UV800    0xd874
+#define ID_THN129   0xcc43  // THN129 Temp only
 
 float get_os_temperature(unsigned char *message, unsigned int sensor_id) {
   // sensor ID included  to support sensors with temp in different position
@@ -352,6 +353,22 @@ static int oregon_scientific_v2_1_parser(bitbuffer_t *bitbuffer) {
         // RF Clock message ??
       }
       return 1;
+    } else if (sensor_id  == ID_THN129) {
+      if ((validate_os_v2_message(msg, 137, num_valid_v2_bits, 12) == 0)) {
+        float temp_c = get_os_temperature(msg, sensor_id);
+        data = data_make(
+            "time",          "",            DATA_STRING, time_str,
+            "brand",         "",            DATA_STRING, "OS",
+            "model",         "",            DATA_STRING, "THN129",
+            "id",            "House Code",  DATA_INT,    get_os_rollingcode(msg, sensor_id),
+            "channel",       "Channel",     DATA_INT,    get_os_channel(msg, sensor_id), // 1 to 5
+            "battery",       "Battery",     DATA_STRING, get_os_battery(msg, sensor_id) ? "LOW" : "OK",
+            "temperature_C",  "Celcius",    DATA_FORMAT, "%.02f C", DATA_DOUBLE, temp_c,
+            NULL);
+        data_acquired_handler(data);
+      }
+       
+      return 1;
     } else if (num_valid_v2_bits > 16) {
       if(debug_output) {
         fprintf(stdout, "%d bit message received from unrecognized Oregon Scientific v2.1 sensor with device ID %x.\n", num_valid_v2_bits, sensor_id);
@@ -536,15 +553,13 @@ return 1;
       msg[0]=msg[0] & 0x0f;
       if (validate_os_checksum(msg, 22) == 0) {
         float rawAmp = (msg[4] >> 4 << 8 | (msg[3] & 0x0f )<< 4 | msg[3] >> 4);
-        //fprintf(stdout, "current measurement reading value   = %.0f\n", rawAmp);
-        //fprintf(stdout, "current watts (230v)   = %.0f\n", rawAmp /(0.27*230)*1000);
         unsigned short int ipower = (rawAmp /(0.27*230)*1000);
         data = data_make(
             "time",   "",           DATA_STRING,  time_str,
             "brand",  "",           DATA_STRING, "OS",
             "model",  "",           DATA_STRING,  "CM160",
             "id",     "House Code", DATA_INT, msg[1]&0x0F,
-            "power",  "Power",      DATA_FORMAT,  "%.0f W", DATA_INT, ipower,
+            "power",  "Power",      DATA_FORMAT,  "%d W", DATA_INT, ipower,
             NULL);
           data_acquired_handler(data);
       }
